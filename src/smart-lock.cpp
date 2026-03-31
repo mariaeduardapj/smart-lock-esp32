@@ -1,4 +1,4 @@
-const String SYSTEM_VERSION = "v1.1.0";
+const String SYSTEM_VERSION = "v1.0.0";
 
 #include <Arduino.h>
 

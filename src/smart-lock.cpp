@@ -6,13 +6,9 @@
 #include <Adafruit_SSD1306.h> 
 
 #define SYSTEM_NAME "Smart Lock"
-#define SYSTEM_VERSION "v1.2.0"
-#define ButtonPin 4
+#define SYSTEM_VERSION "v2.0.0"
 #define LockPin 5
-
 #define BuzzerPin 18
-// Identify buzzer pin
-
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64 
 #define OLED_RESET     -1
@@ -25,6 +21,20 @@ void version_display() {
   display.setCursor(90, 56);
   display.print(SYSTEM_VERSION);
 }
+
+void locked_display() {
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0, 20);
+  display.println("DOOR LOCKED");
+  display.setCursor(1, 20);
+  display.println("DOOR LOCKED");
+  display.setCursor(0, 30);
+  display.println("Enter a password");
+  version_display();
+  display.display();
+}
   
 void setup() {
   Serial.begin(115200);
@@ -33,61 +43,70 @@ void setup() {
   Serial.println("Developed by Maria Eduarda P. Jesus");
   Serial.println("=====================================");
   
-  pinMode(ButtonPin, INPUT_PULLDOWN);
   pinMode(LockPin, OUTPUT);
   digitalWrite(LockPin, HIGH);
-
   pinMode(BuzzerPin, OUTPUT);
   digitalWrite(BuzzerPin, HIGH);
-  // Set the buzzer as output and make it start off (works in reverse)
-  
+
+
   display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
-  display.clearDisplay();
+  locked_display();
 }
 
 void loop() {
-  int buttonState = digitalRead(ButtonPin);
-  
-  if (buttonState == HIGH) {
-    digitalWrite(LockPin, LOW);
+  if (Serial.available() > 0) {
+    String input = Serial.readStringUntil('\n');
+    // Waits for the user to enter the password
 
-    digitalWrite(BuzzerPin, LOW);
-    delay(300);
-    digitalWrite(BuzzerPin, HIGH);
-    // When the door opens, the buzzer emits a sound for 0.3s
+    if (input == "0000") {
+      digitalWrite(LockPin, LOW);
+
+      digitalWrite(BuzzerPin, LOW);
+      delay(300);
+      digitalWrite(BuzzerPin, HIGH);
+      
+      display.clearDisplay();
+      display.setTextSize(1);
+      display.setTextColor(WHITE);
+      display.setCursor(0, 20);
+      display.println("DOOR UNLOCKED");
+      display.setCursor(1, 20);
+      display.println("DOOR UNLOCKED");
+      display.setCursor(0, 30);
+      display.println("Closes in 5 seconds");
+      version_display();
+      display.display();
+      // If the password is correct, the door opens
     
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.setCursor(47, 5);
-    display.println("STATUS:");
-    display.setTextSize(2);
-    display.setTextColor(WHITE);
-    display.setCursor(18, 25);
-    display.println("UNLOCKED");
-    version_display();
-    display.display();
-  
-    delay(5000);
-
-    digitalWrite(BuzzerPin, LOW);
-    delay(200);
-    digitalWrite(BuzzerPin, HIGH);
-    // When the door closes, the buzzer emits a sound for 0,2s
-  } 
-  else {
-    digitalWrite(LockPin, HIGH);
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.setCursor(47, 5);
-    display.println("STATUS:");
-    display.setTextSize(2);
-    display.setTextColor(WHITE);
-    display.setCursor(29, 25);
-    display.println("LOCKED");
-    version_display();
-    display.display();
+      delay(5000);
+      digitalWrite(BuzzerPin, LOW);
+      delay(200);
+      digitalWrite(BuzzerPin, HIGH);
+      locked_display();
+      // Lock the door and start the loop again
+    } 
+    else {
+      digitalWrite(BuzzerPin, LOW);
+      delay(50);
+      digitalWrite(BuzzerPin, HIGH);
+      delay(50);
+      digitalWrite(BuzzerPin, LOW);
+      delay(50);
+      digitalWrite(BuzzerPin, HIGH);
+      display.clearDisplay();
+      display.setTextSize(1);
+      display.setTextColor(WHITE);
+      display.setCursor(0, 26);
+      display.println("INCORRECT PASSWORD");
+      display.setCursor(1, 26);
+      display.println("INCORRECT PASSWORD");
+      version_display();
+      display.display();
+      delay(1000);
+      locked_display();
+      // If the password is incorrect, it emits a different beep and restarts the loop
+    }
   }
 }
+
 
